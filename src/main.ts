@@ -3,26 +3,80 @@ import * as fs from 'fs/promises';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { readFile } from 'fs/promises';
-import { LectureMetadata } from './interfaces/LectureMetadata';
+
+/**
+ * Escapes latex text
+ * @param text Text to be escaped
+ * @returns escapedText LaTeX that has been escaped
+ */
+const escapeLatex = (text: string): string => {
+  if (!text) {
+    return '';
+  }
+
+  // backslash
+  let escapedText = text.replace(/\\/g, '\\textbackslash{}'); 
+  
+  escapedText = escapedText
+    .replace(/{/g, '\\{') // braces
+    .replace(/}/g, '\\}')
+    .replace(/%/g, '\\%') // command termination
+    .replace(/\$/g, '\\$') // mathmode
+    .replace(/&/g, '\\&') // table alignment
+    .replace(/#/g, '\\#') // command args
+    .replace(/\^/g, '\\^{}') // superscript
+    .replace(/_/g, '\\_') // subscript
+    .replace(/~/g, '\\textasciitilde{}'); // unbreakable space
+
+  return escapedText;
+};
+
+/**
+ * Sanitizes a package name
+ */
+const sanitizeLatexPackage = (input: string): string => {
+    if (!input) return '';
+    // Only allow alphanumeric characters, hyphens, and periods
+    return input.replace(/[^a-zA-Z0-9.\-]/g, '');
+}
+
+/**
+ * Sanitizes a file path component
+ * Prevent directory traversal or command injection
+ */
+function sanitizeLatexPathSegment(input: string): string {
+    if (!input) return '';
+    // Prohibit '/', '\', '..'
+    return input.replace(/[^a-zA-Z0-9_\-. ]/g, '');
+}
 
 function generateMainFileContent(content: LectureMetadata): string | null {
-    if (!content || !content.title || !content.author || !content.packages || !content.mainfile || !content.directory || !content.files) {
-        return null;
-    }
+  if (!content || !content.title || !content.author || !content.packages || !content.mainfile || !content.directory || !content.files) {
+    return null;
+  }
 
-    const usepackageCommands: string = content.packages
-        .map(pkg => `\\usepackage{${pkg}}`)
-        .join('\n');
+  const safeTitle: string = escapeLatex(content.title);
+  const safeAuthor: string = escapeLatex(content.author);
+  
+  const safePackages: string[] = content.packages.map(pkg => sanitizeLatexPackage(pkg));
+  const safeDirectory: string = sanitizeLatexPathSegment(content.directory);
+  const safeFiles: string[] = content.files.map(file => sanitizeLatexPathSegment(file));
 
-    const inputCommands: string = content.files
-        .map(file => `\\input{${content.directory}/${file}} \\newpage`)
-        .join('\n');
-    
-    const latexContent = `\\documentclass[11pt]{article}
+  const usepackageCommands: string = safePackages
+    .filter(pkg => pkg.length > 0)
+    .map(pkg => `\\usepackage{${pkg}}`)
+    .join('\n');
+
+  const inputCommands: string = safeFiles
+    .filter(file => file.length > 0)
+    .map(file => `\\input{${safeDirectory}/${file}} \\newpage`)
+    .join('\n');
+  
+  const latexContent = `\\documentclass[11pt]{article}
 ${usepackageCommands}
 
-\\newcommand{\\documenttitle}{${content.title}}
-\\newcommand{\\authorname}{${content.author}}
+\\newcommand{\\documenttitle}{${safeTitle}}
+\\newcommand{\\authorname}{${safeAuthor}}
 
 \\begin{document}
 
@@ -39,7 +93,7 @@ ${inputCommands}
 
 \\end{document}`;
 
-    return latexContent;
+  return latexContent;
 }
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -80,7 +134,6 @@ async function readJsonFile(folderPath: string, fileName: string): Promise<any |
         // Reading file content as a string
         const data = await readFile(fullPath, { encoding: 'utf8' });
         const config = JSON.parse(data); 
-        // TODO: actually implement JSON
         return config;
     } catch (error: any) {
         if (error.code === 'ENOENT') {
@@ -142,13 +195,21 @@ function setupIpcHandlers() {
       }
 
       // Construct full file path
+      const baseFolder = path.normalize(folderPath);
       const filePath = path.join(folderPath, metadata.mainfile);
+      const normalizedPath = path.normalize(filePath);
+      if (!normalizedPath.startsWith(baseFolder)) {
+        throw new Error("Unexpected mainfile path");
+      }
 
       // Write the file
       await fs.writeFile(filePath, fileContent, 'utf8');
 
       console.log(`Successfully wrote main file: ${filePath}`);
-      return { success: true, filePath: filePath };
+      return {
+        success: true,
+        filePath: filePath
+      };
 
     } catch (error) {
       console.error("Error in Main Process while generating/writing file:", error);

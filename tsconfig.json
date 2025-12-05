@@ -11,5 +11,9 @@
     "outDir": "dist",
     "moduleResolution": "node",
     "resolveJsonModule": true
-  }
+  },
+  "include": [
+    "src/**/*", // This typically covers all files in src, including d.ts
+    "**/*.d.ts"
+  ],
 }

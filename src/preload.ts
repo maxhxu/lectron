@@ -2,7 +2,7 @@
 // https://www.electronjs.org/docs/latest/tutorial/process-model#preload-scripts
 
 import { contextBridge, ipcRenderer } from 'electron';
-import { LectureMetadata } from './interfaces/LectureMetadata';
+import { LectureMetadata } from './LectureMetadata';
 import * as path from 'path';
 
 contextBridge.exposeInMainWorld('electronAPI', {
