@@ -27,6 +27,7 @@
  */
 
 import './index.css';
+import { LectureMetadata } from './interfaces/LectureMetadata';
 
 console.log(
   '👋 This message is being logged by "renderer.ts", included via Vite',
@@ -38,34 +39,9 @@ declare global {
       openFile: () => Promise<string[] | null>;
       openFolder: () => Promise<string[] | null>;
       readJsonFile: (folderPath: string, fileName: string) => Promise<any | null>;
+      generateAndWriteMainFile: (metadata: LectureMetadata, folderPath: string) => Promise<{ success: boolean, filePath?: string, error?: string }>;
     };
   }
-}
-
-interface LectureMetadata {
-    // Required string properties
-    title: string;
-    author: string;
-    mainfile: string;
-    directory: string;
-    
-    // Required array of strings properties
-    packages: string[];
-    files: string[];
-}
-
-/**
- * Processes lecture metadata
- * @param content The parsed JSON Object
- * @returns {void} Returns nothing
- */
-function processLectureMetadata(content: LectureMetadata | any): void {
-  // Check for nulls
-  if (!content) { 
-    console.error("Invalid or malformed file content structure: Content is null or undefined.");
-    return;
-  }
-  console.log("Success!");
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -115,11 +91,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (fileContent) {
           console.log(`Found and read ${fileName}:`, fileContent);
-        } else {
-          console.log(`${fileName} not found in the selected folder.`);
-        }
 
-        processLectureMetadata(fileContent);
+          // Found such a file proceed with further processing
+
+          console.log(fileContent);
+          console.log(fileName);
+          console.log(folderPath);
+
+          try {
+            // Call exposed function
+            const result = await window.electronAPI.generateAndWriteMainFile(fileContent, folderPath);
+
+            if (result.success) {
+                console.log(`Success! Main file created at: ${result.filePath}`);
+                alert(`File successfully created: ${result.filePath}`);
+            } else {
+                console.error(`Failed to create file: ${result.error}`);
+                alert(`Error creating file: ${result.error}`);
+            }
+          } catch (error) {
+            console.error("IPC call failed:", error);
+            alert("An unknown error occurred during file creation.");
+          }
+
+        } else {
+          console.log(`Incorrect JSON format, or ${fileName} not found in the selected folder.`);
+        }
       } else {
         if (pathDisplay) {
           pathDisplay.innerText = 'Dialog cancelled.';
@@ -135,3 +132,4 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 });
+

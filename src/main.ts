@@ -1,7 +1,46 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import * as fs from 'fs/promises';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { readFile } from 'fs/promises';
+import { LectureMetadata } from './interfaces/LectureMetadata';
+
+function generateMainFileContent(content: LectureMetadata): string | null {
+    if (!content || !content.title || !content.author || !content.packages || !content.mainfile || !content.directory || !content.files) {
+        return null;
+    }
+
+    const usepackageCommands: string = content.packages
+        .map(pkg => `\\usepackage{${pkg}}`)
+        .join('\n');
+
+    const inputCommands: string = content.files
+        .map(file => `\\input{${content.directory}/${file}} \\newpage`)
+        .join('\n');
+    
+    const latexContent = `\\documentclass[11pt]{article}
+${usepackageCommands}
+
+\\newcommand{\\documenttitle}{${content.title}}
+\\newcommand{\\authorname}{${content.author}}
+
+\\begin{document}
+
+\\title{\\documenttitle}
+\\rhead{\\textbf{\\small \\documenttitle}}
+\\lhead{\\textbf{\\small \\authorname}}
+\\author{\\authorname}
+\\maketitle
+
+\\tableofcontents
+\\newpage
+
+${inputCommands}
+
+\\end{document}`;
+
+    return latexContent;
+}
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -79,13 +118,44 @@ function setupIpcHandlers() {
     }
   });
 
-  ipcMain.handle('readJsonFile', async (event, folderPath: string, fileName: string) => {
+  ipcMain.handle('file:readJsonFile', async (event, folderPath: string, fileName: string) => {
     console.log("trying to read file");
     try {
       return await readJsonFile(folderPath, fileName);
     } catch (error) {
       console.error('Error in main process reading file:', error);
       throw new Error(`Failed to read file: ${error.message}`);
+    }
+  });
+
+
+  ipcMain.handle('generateAndWriteMainFile', async (event, metadata: LectureMetadata, folderPath: string) => {
+    try {
+      if (!folderPath) {
+        throw new Error("Target folder path is empty.");
+      }
+      
+      const fileContent = generateMainFileContent(metadata);
+
+      if (!fileContent) {
+        throw new Error("Failed to generate LaTeX content.");
+      }
+
+      // Construct full file path
+      const filePath = path.join(folderPath, metadata.mainfile);
+
+      // Write the file
+      await fs.writeFile(filePath, fileContent, 'utf8');
+
+      console.log(`Successfully wrote main file: ${filePath}`);
+      return { success: true, filePath: filePath };
+
+    } catch (error) {
+      console.error("Error in Main Process while generating/writing file:", error);
+      return { 
+        success: false, 
+        error: `File write failed: ${(error as Error).message}` 
+      };
     }
   });
 }
