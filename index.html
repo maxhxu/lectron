@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Hello World!</title>
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self'; style-src 'self' 'unsafe-inline'; default-src 'self';">
+  </head>
+  <body>
+    <h1>💖 Welcome!</h1>
+    <hr></hr>
+    <div class="grid-container">
+      <div class="column-1">
+        <h2>Start</h2>
+        <ul class="nobullets">
+          <li>
+            <button class="constantbutton" id="newFolderButton">
+              <img class="iconblue" src="./assets/folder-plus-solid-full.svg">
+              New Project
+            </button>
+          </li>
+          <li>
+            <button class="constantbutton" id="openFolderButton">
+              <img class="iconblue" src="./assets/folder-open-solid-full.svg">
+              Open Project
+            </button>
+          </li>
+        </ul>
+      </div>
+      <div class="column-2">
+        <h2>Options</h2>
+        <p id="filePathDisplay">Select or create a project to begin.</p>
+      </div>
+    </div>
+    <script type="module" src="/src/renderer.ts"></script>
+  </body>
+</html>
