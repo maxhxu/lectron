@@ -6,6 +6,8 @@ import { LectureMetadata } from './LectureMetadata';
 import * as path from 'path';
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  setProjectDirectory: (newPath: string) => ipcRenderer.invoke("setProjectDirectory", newPath),
+  getProjectDirectory: () => ipcRenderer.invoke("getProjectDirectory") as Promise<string>,
   openFolder: () => ipcRenderer.invoke('dialog:openFolder'),
   openFile: () => ipcRenderer.invoke('dialog:openFile'),
   readJsonFile: (folderPath: string, fileName: string) => 

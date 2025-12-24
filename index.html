@@ -9,6 +9,7 @@
     <h1>💖 Welcome!</h1>
     <hr></hr>
     <div class="grid-container">
+
       <div class="column-1">
         <h2>Start</h2>
         <ul class="nobullets">
@@ -26,9 +27,30 @@
           </li>
         </ul>
       </div>
+
       <div class="column-2">
-        <h2>Options</h2>
+        <h2>Project</h2>
         <p id="filePathDisplay">Select or create a project to begin.</p>
+        
+        <div id="metadataForm" style="display: none; margin-top: 20px;">
+          <div class="field">
+            <label>Title:</label>
+            <input type="text" id="inputTitle">
+          </div>
+          <div class="field">
+            <label>Author:</label>
+            <input type="text" id="inputAuthor">
+          </div>
+          <div class="field">
+            <label>Main File:</label>
+            <input type="text" id="inputMainFile">
+          </div>
+          <div class="field">
+            <label>Directory:</label>
+            <input type="text" id="inputDirectory" disabled>
+          </div>
+          <button id="saveButton" class="constantbutton" style="margin-top: 10px;">Update Metadata</button>
+        </div>
       </div>
     </div>
     <script type="module" src="/src/renderer.ts"></script>

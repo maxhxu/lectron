@@ -3,6 +3,9 @@ import * as fs from 'fs/promises';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { readFile } from 'fs/promises';
+import { LectureMetadata } from "./LectureMetadata";
+
+let currentProjectPath = '';
 
 /**
  * Escapes latex text
@@ -37,7 +40,7 @@ const escapeLatex = (text: string): string => {
 const sanitizeLatexPackage = (input: string): string => {
     if (!input) return '';
     // Only allow alphanumeric characters, hyphens, and periods
-    return input.replace(/[^a-zA-Z0-9.\-]/g, '');
+    return input.replace(/[^a-zA-Z0-9.\\-]/g, '');
 }
 
 /**
@@ -145,6 +148,14 @@ async function readJsonFile(folderPath: string, fileName: string): Promise<any |
 
 
 function setupIpcHandlers() {
+  ipcMain.handle('setProjectDirectory', async(event, newPath: string) => {
+    currentProjectPath = newPath;
+  })
+
+  ipcMain.handle('getProjectDirectory', async(event) => {
+    return currentProjectPath;
+  })
+
   ipcMain.handle('dialog:openFile', async (event) => {
     const { canceled, filePaths } = await dialog.showOpenDialog(BrowserWindow.getFocusedWindow(), {
       properties: ['openFile']
@@ -172,7 +183,7 @@ function setupIpcHandlers() {
   });
 
   ipcMain.handle('file:readJsonFile', async (event, folderPath: string, fileName: string) => {
-    console.log("trying to read file");
+    console.log(`Trying to read file in dir:${folderPath} with name: ${fileName}`);
     try {
       return await readJsonFile(folderPath, fileName);
     } catch (error) {
@@ -180,7 +191,6 @@ function setupIpcHandlers() {
       throw new Error(`Failed to read file: ${error.message}`);
     }
   });
-
 
   ipcMain.handle('generateAndWriteMainFile', async (event, metadata: LectureMetadata, folderPath: string) => {
     try {

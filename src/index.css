@@ -7,6 +7,10 @@ body {
   padding: 2rem;
 }
 
+.field {
+  padding: 3px;
+}
+
 .grid-container {
   display: grid;
   grid-template-columns: 1fr 1fr;

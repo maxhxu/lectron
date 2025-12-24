@@ -1,6 +1,9 @@
+import { electron } from "node:process";
+import { LectureMetadata } from "./LectureMetadata";
+
 type ElectronAPI = Window['electronAPI']; // TODO: this is cursed
 
-export async function handleOpenFolderWorkflow(electronAPI : ElectronAPI): Promise<{ success: boolean; message: string; filePath?: string }> {
+export async function handleOpenFolderWorkflow(electronAPI : ElectronAPI): Promise<{ success: boolean; message: string; folderPath?: string; data?: LectureMetadata }> {
     try {
         const selectedPaths = await electronAPI.openFolder();
 
@@ -19,7 +22,31 @@ export async function handleOpenFolderWorkflow(electronAPI : ElectronAPI): Promi
         const result = await electronAPI.generateAndWriteMainFile(fileContent, folderPath);
 
         if (result.success) {
-            return { success: true, message: `Success! Main file created at: ${result.filePath}`, filePath: result.filePath };
+          electronAPI.setProjectDirectory(folderPath);
+            return { success: true, message: `Success! Main file created at: ${result.filePath}`, folderPath: folderPath, data: fileContent};
+        } else {
+            return { success: false, message: `Failed to create file: ${result.error}` };
+        }
+    } catch (error) {
+        console.error('Workflow error:', error);
+        return { success: false, message: 'An unknown error occurred during the workflow.' };
+    }
+}
+
+export async function handleUpdateWorkflow(electronAPI : ElectronAPI, metadata : LectureMetadata): Promise<{ success: boolean; message: string; data?: LectureMetadata }> {
+    try {
+        const folderPath = await (electronAPI.getProjectDirectory() as Promise<string>);
+        const fileName = 'projectconfig.json';
+        const fileContent = await electronAPI.readJsonFile(folderPath, fileName);
+
+        if (!fileContent) {
+            return { success: false, message: `Incorrect JSON format, or ${fileName} not found in the selected folder.` };
+        }
+
+        const result = await electronAPI.generateAndWriteMainFile(metadata, folderPath);
+
+        if (result.success) {
+            return { success: true, message: `Success! Main file created at: ${result.filePath}`, data: fileContent};
         } else {
             return { success: false, message: `Failed to create file: ${result.error}` };
         }
