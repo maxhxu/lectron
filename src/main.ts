@@ -52,9 +52,8 @@ function sanitizeLatexPathSegment(input: string): string {
     // Prohibit '/', '\', '..'
     return input.replace(/[^a-zA-Z0-9_\-. ]/g, '');
 }
-
 function generateMainFileContent(content: LectureMetadata): string | null {
-  if (!content || !content.title || !content.author || !content.packages || !content.mainfile || !content.directory || !content.files) {
+  if (!content || !content.title || !content.author || !content.packages || !content.mainfile || !content.directory || !Array.isArray(content.files)) {
     return null;
   }
 
@@ -63,16 +62,20 @@ function generateMainFileContent(content: LectureMetadata): string | null {
   
   const safePackages: string[] = content.packages.map(pkg => sanitizeLatexPackage(pkg));
   const safeDirectory: string = sanitizeLatexPathSegment(content.directory);
-  const safeFiles: string[] = content.files.map(file => sanitizeLatexPathSegment(file));
+
+  const inputCommands: string = content.files
+    .filter(filePair => Array.isArray(filePair) && filePair[0].length > 0)
+    .map(([filename, label]) => {
+      const safeFile = sanitizeLatexPathSegment(filename);
+      const safeLabel = escapeLatex(label);
+      
+      return `\\section{${safeLabel}}\n\\input{${safeDirectory}/${safeFile}} \\newpage`;
+    })
+    .join('\n');
 
   const usepackageCommands: string = safePackages
     .filter(pkg => pkg.length > 0)
     .map(pkg => `\\usepackage{${pkg}}`)
-    .join('\n');
-
-  const inputCommands: string = safeFiles
-    .filter(file => file.length > 0)
-    .map(file => `\\input{${safeDirectory}/${file}} \\newpage`)
     .join('\n');
   
   const latexContent = `\\documentclass[11pt]{article}
@@ -84,8 +87,6 @@ ${usepackageCommands}
 \\begin{document}
 
 \\title{\\documenttitle}
-\\rhead{\\textbf{\\small \\documenttitle}}
-\\lhead{\\textbf{\\small \\authorname}}
 \\author{\\authorname}
 \\maketitle
 
@@ -156,6 +157,37 @@ function setupIpcHandlers() {
     return currentProjectPath;
   })
 
+  // Add this inside your setupIpcHandlers() function in main.ts
+
+  ipcMain.handle('initNewProject', async (event, metadata: LectureMetadata, folderPath: string) => {
+    try {
+      if (!folderPath) throw new Error("Target folder path is empty.");
+
+      const fileContent = generateMainFileContent(metadata);
+      if (!fileContent) {
+        throw new Error("Invalid metadata: Failed to generate LaTeX content.");
+      }
+
+      const texFilePath = path.join(folderPath, metadata.mainfile);
+      await fs.writeFile(texFilePath, fileContent, 'utf8');
+
+      const jsonFilePath = path.join(folderPath, 'projectconfig.json');
+      await fs.writeFile(jsonFilePath, JSON.stringify(metadata, null, 2), 'utf8');
+
+      console.log(`Initialized new project at: ${folderPath}`);
+      return {
+        success: true,
+        filePath: texFilePath
+      };
+    } catch (error) {
+      console.error("Error in Main Process while initializing new project:", error);
+      return { 
+        success: false, 
+        error: (error as Error).message 
+      };
+    }
+  });
+
   ipcMain.handle('dialog:openFile', async (event) => {
     const { canceled, filePaths } = await dialog.showOpenDialog(BrowserWindow.getFocusedWindow(), {
       properties: ['openFile']
@@ -214,6 +246,9 @@ function setupIpcHandlers() {
 
       // Write the file
       await fs.writeFile(filePath, fileContent, 'utf8');
+
+      const jsonFilePath = path.join(folderPath, 'projectconfig.json');
+      await fs.writeFile(jsonFilePath, JSON.stringify(metadata, null, 2), 'utf8');
 
       console.log(`Successfully wrote main file: ${filePath}`);
       return {

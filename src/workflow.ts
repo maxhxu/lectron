@@ -3,6 +3,43 @@ import { LectureMetadata } from "./LectureMetadata";
 
 type ElectronAPI = Window['electronAPI']; // TODO: this is cursed
 
+export async function handleNewFolderWorkflow(electronAPI: any): Promise<{ success: boolean; message: string; data?: LectureMetadata }> {
+    try {
+        const selectedPaths = await electronAPI.openFolder();
+
+        if (!selectedPaths || selectedPaths.length === 0) {
+            return { success: false, message: 'Folder selection cancelled.' };
+        }
+
+        const folderPath = selectedPaths[0];
+
+        const newMetadata: LectureMetadata = {
+            title: 'New Lecture',
+            author: 'Author Name',
+            mainfile: 'main.tex',
+            directory: 'sections',
+            packages: ['amsmath', 'amssymb', 'graphicx'],
+            files: []
+        };
+        
+        // call handler
+        const result = await electronAPI.initNewProject(newMetadata, folderPath);
+
+        if (result.success) {
+            await electronAPI.setProjectDirectory(folderPath);
+            return { 
+                success: true, 
+                message: `Project created successfully!`, 
+                data: newMetadata 
+            };
+        } else {
+            return { success: false, message: `Failed to create project: ${result.error}` };
+        }
+    } catch (error) {
+        return { success: false, message: 'An unexpected error occurred.' };
+    }
+}
+
 export async function handleOpenFolderWorkflow(electronAPI : ElectronAPI): Promise<{ success: boolean; message: string; folderPath?: string; data?: LectureMetadata }> {
     try {
         const selectedPaths = await electronAPI.openFolder();

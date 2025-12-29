@@ -1,57 +1,87 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Hello World!</title>
+    <title>Project Manager</title>
     <meta http-equiv="Content-Security-Policy" content="script-src 'self'; style-src 'self' 'unsafe-inline'; default-src 'self';">
+    <link rel="stylesheet" href="style.css">
   </head>
   <body>
-    <h1>💖 Welcome!</h1>
-    <hr></hr>
-    <div class="grid-container">
-
-      <div class="column-1">
-        <h2>Start</h2>
-        <ul class="nobullets">
-          <li>
-            <button class="constantbutton" id="newFolderButton">
-              <img class="iconblue" src="./assets/folder-plus-solid-full.svg">
-              New Project
-            </button>
-          </li>
-          <li>
-            <button class="constantbutton" id="openFolderButton">
-              <img class="iconblue" src="./assets/folder-open-solid-full.svg">
-              Open Project
-            </button>
-          </li>
-        </ul>
-      </div>
-
-      <div class="column-2">
-        <h2>Project</h2>
-        <p id="filePathDisplay">Select or create a project to begin.</p>
-        
-        <div id="metadataForm" style="display: none; margin-top: 20px;">
-          <div class="field">
-            <label>Title:</label>
-            <input type="text" id="inputTitle">
-          </div>
-          <div class="field">
-            <label>Author:</label>
-            <input type="text" id="inputAuthor">
-          </div>
-          <div class="field">
-            <label>Main File:</label>
-            <input type="text" id="inputMainFile">
-          </div>
-          <div class="field">
-            <label>Directory:</label>
-            <input type="text" id="inputDirectory" disabled>
-          </div>
-          <button id="saveButton" class="constantbutton" style="margin-top: 10px;">Update Metadata</button>
+    <div class="app-container">
+      <aside class="sidebar">
+        <div class="brand">
+          <h1>📝 Manager</h1>
         </div>
-      </div>
+        <nav>
+          <button class="action-btn primary" id="newFolderButton">
+            <img class="icon" src="./assets/folder-plus-solid-full.svg" alt="">
+            <span>New Project</span>
+          </button>
+          <button class="action-btn secondary" id="openFolderButton">
+            <img class="icon" src="./assets/folder-open-solid-full.svg" alt="">
+            <span>Open Project</span>
+          </button>
+        </nav>
+      </aside>
+
+      <main class="workspace">
+        <header class="workspace-header">
+          <h2>Project Details</h2>
+        </header>
+
+        <section id="metadataForm" class="content-card" style="display: none;">
+          <div class="form-section">
+            <h3>General Information</h3>
+            <div class="form-grid">
+              <div class="field">
+                <label>Title</label>
+                <input type="text" id="inputTitle" data-key="title">
+              </div>
+              <div class="field">
+                <label>Author</label>
+                <input type="text" id="inputAuthor" data-key="author">
+              </div>
+              <div class="field">
+                <label>Main Entry File</label>
+                <input type="text" id="inputMainFile" data-key="mainfile">
+              </div>
+              <div class="field">
+                <label>Directory</label>
+                <input type="text" id="inputDirectory" data-key="directory">
+              </div>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <div class="form-section">
+            <h3>Project Files</h3>
+            <p class="section-desc">List of LaTeX or asset files included in this project.</p>
+            <div id="fileListContainer" class="list-container">
+              </div>
+            <button class="add-btn" id="addFileButton">
+              <span class="plus-icon">+</span> Add File
+            </button>
+          </div>
+
+          <hr class="divider">
+
+          <div class="form-section">
+            <h3>Required Packages</h3>
+            <p class="section-desc">Extra LaTeX packages required for this lecture.</p>
+            <div id="packageListContainer" class="list-container">
+              </div>
+            <button class="add-btn" id="addPackageButton">
+              <span class="plus-icon">+</span> Add Package
+            </button>
+          </div>
+
+          <div class="form-footer">
+            <button id="saveButton" class="save-btn-large">Save All Changes</button>
+          </div>
+        </section>
+        <p id="filePathDisplay" class="status-text">Select or create a project to begin.</p>
+      </main>
     </div>
     <script type="module" src="/src/renderer.ts"></script>
   </body>

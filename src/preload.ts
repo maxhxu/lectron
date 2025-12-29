@@ -13,7 +13,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   readJsonFile: (folderPath: string, fileName: string) => 
         ipcRenderer.invoke('file:readJsonFile', folderPath, fileName),
   generateAndWriteMainFile: (metadata: LectureMetadata, folderPath: string) => 
-        ipcRenderer.invoke('generateAndWriteMainFile', metadata, folderPath)
+        ipcRenderer.invoke('generateAndWriteMainFile', metadata, folderPath),
+  initNewProject: (metadata: LectureMetadata, folderPath: string) => 
+        ipcRenderer.invoke('initNewProject', metadata, folderPath)
         
   // ipcRenderer.invoke() is used to call the ipcMain.handle() function
 });

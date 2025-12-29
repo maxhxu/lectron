@@ -4,5 +4,5 @@ export interface LectureMetadata {
   mainfile: string;
   directory: string;
   packages: string[];
-  files: string[];
+  files: [string, string][];
 }
