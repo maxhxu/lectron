@@ -149,7 +149,7 @@ input:focus {
 }
 
 .divider {
-  margin: 2rem 0;
+  margin: 1rem 0;
   border: 0;
   border-top: 1px solid var(--border-color);
 }
@@ -224,9 +224,9 @@ input:focus {
 }
 
 .form-footer {
-  margin-top: 3rem;
+  margin-top: 1rem;
   border-top: 2px solid var(--border-color);
-  padding-top: 1.5rem;
+  padding-top: 1rem;
   text-align: right;
 }
 
